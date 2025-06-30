@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angels Or Demons</title>
+    <style>
+        body {
+            font-family: 'Georgia', serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+        }
+        
+        .game-container {
+            background: linear-gradient(145deg, #2a2a3e, #1e1e2e);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            max-width: 420px;
+            width: 100%;
+            border: 2px solid #444;
+        }
+        
+        .title {
+            text-align: center;
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 28px;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .rules {
+            background: linear-gradient(135deg, #2d1b69, #11998e);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .game-status {
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            min-height: 25px;
+            text-shadow: 0 0 5px rgba(255,255,255,0.3);
+        }
+        
+        .team-selection {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .team-choice {
+            display: inline-block;
+            margin: 10px;
+            padding: 20px 30px;
+            border: 3px solid transparent;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 18px;
+            font-weight: bold;
+            background: linear-gradient(145deg, #2a2a3e, #1e1e2e);
+        }
+        
+        .team-choice:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+        
+        .angels-choice {
+            color: #87CEEB;
+            border-color: #87CEEB;
+        }
+        
+        .angels-choice:hover {
+            background: linear-gradient(145deg, #87CEEB, #4682B4);
+            color: white;
+        }
+        
+        .demons-choice {
+            color: #FF6B6B;
+            border-color: #FF6B6B;
+        }
+        
+        .demons-choice:hover {
+            background: linear-gradient(145deg, #FF6B6B, #DC143C);
+            color: white;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .board-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        
+        .realm-label {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 5px 0;
+            text-align: center;
+            text-shadow: 0 0 10px currentColor;
+        }
+        
+        .heaven { color: #87CEEB; }
+        .hell { color: #FF6B6B; }
+        .purgatory { color: #FFD700; }
+        
+        .gameboard {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 2px;
+            background: #333;
+            border: 3px solid #666;
+            margin: 5px 0;
+            width: 320px;
+            height: 200px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .square {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s ease;
+            position: relative;
+            min-height: 35px;
+        }
+        
+        .light { background: #E8E8E8; color: #333; }
+        .dark { background: #8B4513; color: #FFF; }
+        .purgatory-row { background: #FFD700 !important; color: #333; }
+        
+        .selected {
+            background: #FF1493 !important;
+            box-shadow: inset 0 0 0 3px #FFD700;
+            transform: scale(1.1);
+        }
+        
+        .possible-move {
+            background: #32CD32 !important;
+            box-shadow: 0 0 15px #32CD32;
+        }
+        
+        .enemy-piece {
+            background: #FF4500 !important;
+            box-shadow: 0 0 15px #FF4500;
+        }
+        
+        .square:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(145deg, #667eea, #764ba2);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        button:hover {
+            background: linear-gradient(145deg, #764ba2, #667eea);
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0,0,0,0.4);
+        }
+        
+        .winner {
+            color: #FFD700;
+            font-size: 18px;
+            text-align: center;
+            margin-top: 15px;
+            text-shadow: 0 0 10px #FFD700;
+            font-weight: bold;
+        }
+        
+        .piece {
+            filter: drop-shadow(0 0 3px rgba(0,0,0,0.7));
+            position: absolute;
+            z-index: 10;
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            transform-origin: center;
+        }
+        
+        .piece.moving {
+            z-index: 20;
+            transform: scale(1.2);
+            filter: drop-shadow(0 0 8px rgba(255,255,255,0.6));
+        }
+        
+        .ai-thinking {
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .piece-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">⚔️ Angels Or Demons ⚔️</h1>
+        
+        <div class="team-selection" id="teamSelection">
+            <h2 style="color: #FFD700; margin-bottom: 20px;">Choose Your Side</h2>
+            <div class="team-choice angels-choice" onclick="selectTeam('angels')">
+                <div style="font-size: 32px; margin-bottom: 10px;">👼</div>
+                <div>Play as Angels</div>
+                <div style="font-size: 14px; margin-top: 5px;">Descend to Hell</div>
+            </div>
+            <div class="team-choice demons-choice" onclick="selectTeam('demons')">
+                <div style="font-size: 32px; margin-bottom: 10px;">😈</div>
+                <div>Play as Demons</div>
+                <div style="font-size: 14px; margin-top: 5px;">Ascend to Heaven</div>
+            </div>
+        </div>
+        
+        <div class="game-content hidden" id="gameContent">
+            <div class="rules">
+                <strong>Rules:</strong> Move your pieces forward or diagonally forward. Reach the other side to win! If you destroy a piece, you have broken the balance of good and evil and lose!
+            </div>
+            
+            <div class="game-status" id="gameStatus">Your turn</div>
+            
+            <div class="board-container">
+                <div class="realm-label" id="topRealm">🔥 HELL 🔥</div>
+                <div class="gameboard" id="gameboard">
+                    <div class="piece-container" id="pieceContainer"></div>
+                </div>
+                <div class="realm-label" id="bottomRealm">☁️ HEAVEN ☁️</div>
+            </div>
+            
+            <div class="controls">
+                <button onclick="resetGame()">New Game</button>
+                <button onclick="toggleAI()" id="aiBtn">AI: ON</button>
+                <button onclick="backToTeamSelection()">Change Team</button>
+            </div>
+            
+            <div class="winner" id="winner"></div>
+        </div>
+    </div>
+
+    <script>
+        const pieces = {
+            'A': '👼',
+            'D': '😈'
+        };
+        
+        let board = [];
+        let currentPlayer = 'player';
+        let playerTeam = null;
+        let aiTeam = null;
+        let selectedSquare = null;
+        let gameOver = false;
+        let aiEnabled = true;
+        let aiThinking = false;
+        let animating = false;
+        let pieceElements = [];
+        
+        function selectTeam(team) {
+            playerTeam = team;
+            aiTeam = team === 'angels' ? 'demons' : 'angels';
+            
+            document.getElementById('teamSelection').classList.add('hidden');
+            document.getElementById('gameContent').classList.remove('hidden');
+            
+            initGame();
+        }
+        
+        function backToTeamSelection() {
+            document.getElementById('teamSelection').classList.remove('hidden');
+            document.getElementById('gameContent').classList.add('hidden');
+            playerTeam = null;
+            aiTeam = null;
+        }
+        
+        function initGame() {
+            if (!playerTeam) return;
+            
+            if (playerTeam === 'angels') {
+                // Angels start at bottom (heaven) and move up to hell (top)
+                board = [
+                    ['D','D','D','D','D','D','D','D'],
+                    ['D','D','D','D','D','D','D','D'],
+                    [null,null,null,null,null,null,null,null],
+                    ['A','A','A','A','A','A','A','A'],
+                    ['A','A','A','A','A','A','A','A']
+                ];
+                document.getElementById('topRealm').innerHTML = '🔥 HELL 🔥';
+                document.getElementById('topRealm').className = 'realm-label hell';
+                document.getElementById('bottomRealm').innerHTML = '☁️ HEAVEN ☁️';
+                document.getElementById('bottomRealm').className = 'realm-label heaven';
+                currentPlayer = 'player';
+            } else {
+                // Demons start at top (hell) and move down to heaven (bottom)
+                board = [
+                    ['D','D','D','D','D','D','D','D'],
+                    ['D','D','D','D','D','D','D','D'],
+                    [null,null,null,null,null,null,null,null],
+                    ['A','A','A','A','A','A','A','A'],
+                    ['A','A','A','A','A','A','A','A']
+                ];
+                document.getElementById('topRealm').innerHTML = '🔥 HELL 🔥';
+                document.getElementById('topRealm').className = 'realm-label hell';
+                document.getElementById('bottomRealm').innerHTML = '☁️ HEAVEN ☁️';
+                document.getElementById('bottomRealm').className = 'realm-label heaven';
+                currentPlayer = 'player';
+            }
+            
+            selectedSquare = null;
+            gameOver = false;
+            aiThinking = false;
+            animating = false;
+            document.getElementById('winner').textContent = '';
+            
+            createBoard();
+            createPieces();
+            updateGameStatus();
+            
+            if (currentPlayer === 'ai' && aiEnabled && !gameOver) {
+                setTimeout(makeAIMove, 1000);
+            }
+        }
+        
+        function createBoard() {
+            const gameboard = document.getElementById('gameboard');
+            const squares = gameboard.querySelectorAll('.square');
+            squares.forEach(square => square.remove());
+            
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    let squareClass = `square ${(row + col) % 2 === 0 ? 'light' : 'dark'}`;
+                    
+                    if (row === 2) {
+                        squareClass += ' purgatory-row';
+                    }
+                    
+                    square.className = squareClass;
+                    square.dataset.row = row;
+                    square.dataset.col = col;
+                    square.onclick = () => handleSquareClick(row, col);
+                    
+                    gameboard.appendChild(square);
+                }
+            }
+        }
+        
+        function createPieces() {
+            const pieceContainer = document.getElementById('pieceContainer');
+            pieceContainer.innerHTML = '';
+            pieceElements = [];
+            
+            for (let row = 0; row < 5; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = board[row][col];
+                    if (piece) {
+                        const pieceElement = document.createElement('div');
+                        pieceElement.className = 'piece';
+                        pieceElement.textContent = pieces[piece];
+                        pieceElement.dataset.row = row;
+                        pieceElement.dataset.col = col;
+                        pieceElement.dataset.type = piece;
+                        
+                        positionPiece(pieceElement, row, col);
+                        pieceContainer.appendChild(pieceElement);
+                        pieceElements.push(pieceElement);
+                    }
+                }
+            }
+        }
+        
+        function positionPiece(pieceElement, row, col) {
+            const squareSize = 320 / 8;
+            const squareHeight = 200 / 5;
+            
+            const left = col * squareSize + squareSize / 2;
+            const top = row * squareHeight + squareHeight / 2;
+            
+            pieceElement.style.left = left + 'px';
+            pieceElement.style.top = top + 'px';
+            pieceElement.style.transform = 'translate(-50%, -50%)';
+        }
+        
+        function animateMove(fromRow, fromCol, toRow, toCol, callback) {
+            const pieceElement = pieceElements.find(p => 
+                parseInt(p.dataset.row) === fromRow && 
+                parseInt(p.dataset.col) === fromCol
+            );
+            
+            if (!pieceElement) {
+                callback();
+                return;
+            }
+            
+            animating = true;
+            pieceElement.classList.add('moving');
+            
+            pieceElement.dataset.row = toRow;
+            pieceElement.dataset.col = toCol;
+            
+            positionPiece(pieceElement, toRow, toCol);
+            
+            setTimeout(() => {
+                pieceElement.classList.remove('moving');
+                animating = false;
+                callback();
+            }, 500);
+        }
+        
+        function handleSquareClick(row, col) {
+            if (gameOver || aiThinking || currentPlayer === 'ai' || animating) return;
+            
+            const piece = board[row][col];
+            
+            if (selectedSquare) {
+                const [selectedRow, selectedCol] = selectedSquare;
+                
+                if (row === selectedRow && col === selectedCol) {
+                    selectedSquare = null;
+                    updateBoard();
+                    return;
+                }
+                
+                if (isValidMove(selectedRow, selectedCol, row, col)) {
+                    if (board[row][col] !== null) {
+                        endGame(`${aiTeam === 'angels' ? 'Angels' : 'Demons'} win! You have destroyed the balance of good and evil.`);
+                        return;
+                    }
+                    
+                    animateMove(selectedRow, selectedCol, row, col, () => {
+                        makeMove(selectedRow, selectedCol, row, col);
+                        
+                        if (checkVictory(row, col)) {
+                            return;
+                        }
+                        
+                        selectedSquare = null;
+                        currentPlayer = 'ai';
+                        updateGameStatus();
+                        updateBoard();
+                        
+                        if (aiEnabled && !gameOver) {
+                            setTimeout(makeAIMove, 800);
+                        }
+                    });
+                } else {
+                    highlightPossibleMoves(selectedRow, selectedCol);
+                }
+            } else {
+                if (piece && isPlayerOwnPiece(piece)) {
+                    selectedSquare = [row, col];
+                    highlightPossibleMoves(row, col);
+                }
+            }
+            
+            updateBoard();
+        }
+        
+        function isPlayerOwnPiece(piece) {
+            if (playerTeam === 'angels') {
+                return piece === 'A';
+            } else {
+                return piece === 'D';
+            }
+        }
+        
+        function highlightPossibleMoves(fromRow, fromCol) {
+            const squares = document.querySelectorAll('.square');
+            squares.forEach(square => {
+                square.classList.remove('possible-move', 'enemy-piece');
+            });
+            
+            for (let toRow = 0; toRow < 5; toRow++) {
+                for (let toCol = 0; toCol < 8; toCol++) {
+                    if (isValidMove(fromRow, fromCol, toRow, toCol)) {
+                        const square = document.querySelector(`[data-row="${toRow}"][data-col="${toCol}"]`);
+                        if (board[toRow][toCol] === null) {
+                            square.classList.add('possible-move');
+                        } else {
+                            square.classList.add('enemy-piece');
+                        }
+                    }
+                }
+            }
+        }
+        
+        function isPlayerPiece(piece, team) {
+            if (team === 'angels') {
+                return piece === 'A';
+            } else {
+                return piece === 'D';
+            }
+        }
+        
+        function makeMove(fromRow, fromCol, toRow, toCol) {
+            board[toRow][toCol] = board[fromRow][fromCol];
+            board[fromRow][fromCol] = null;
+        }
+        
+        function isValidMove(fromRow, fromCol, toRow, toCol) {
+            const piece = board[fromRow][fromCol];
+            if (!piece) return false;
+            
+            if (toRow < 0 || toRow > 4 || toCol < 0 || toCol > 7) return false;
+            
+            if (fromRow === toRow && fromCol === toCol) return false;
+            
+            const targetPiece = board[toRow][toCol];
+            if (targetPiece && targetPiece === piece) return false;
+            
+            const rowDiff = toRow - fromRow;
+            const colDiff = Math.abs(fromCol - toCol);
+            
+            if (Math.abs(rowDiff) !== 1 || colDiff > 1) return false;
+            
+            // Movement direction based on piece type and team goals
+            if (piece === 'A') {
+                // Angels need to reach Hell (row 0), so they move upward (decreasing row)
+                return rowDiff === -1;
+            } else if (piece === 'D') {
+                // Demons need to reach Heaven (row 4), so they move downward (increasing row)
+                return rowDiff === 1;
+            }
+            
+            return false;
+        }
+        
+        function checkVictory(row, col) {
+            const piece = board[row][col];
+            
+            if (piece === 'A') {
+                // Angels win by reaching Hell (row 0)
+                if (row === 0) {
+                    if (isPlayerPiece(piece, playerTeam)) {
+                        endGame("You win! An angel has reached Hell! 🔥👼");
+                    } else {
+                        endGame("Angels win! An angel has reached Hell! 🔥👼");
+                    }
+                    return true;
+                }
+            } else if (piece === 'D') {
+                // Demons win by reaching Heaven (row 4)
+                if (row === 4) {
+                    if (isPlayerPiece(piece, playerTeam)) {
+                        endGame("You win! A demon has reached Heaven! ☁️😈");
+                    } else {
+                        endGame("Demons win! A demon has reached Heaven! ☁️😈");
+                    }
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        function updateBoard() {
+            const squares = document.querySelectorAll('.square');
+            
+            squares.forEach(square => {
+                square.classList.remove('selected', 'ai-thinking');
+                
+                if (!selectedSquare) {
+                    square.classList.remove('possible-move', 'enemy-piece');
+                }
+            });
+            
+            if (selectedSquare && !gameOver) {
+                const [selectedRow, selectedCol] = selectedSquare;
+                const selectedElement = document.querySelector(`[data-row="${selectedRow}"][data-col="${selectedCol}"]`);
+                selectedElement.classList.add('selected');
+            }
+            
+            if (aiThinking) {
+                pieceElements.forEach(pieceElement => {
+                    const piece = pieceElement.dataset.type;
+                    if (piece && isPlayerPiece(piece, aiTeam)) {
+                        pieceElement.classList.add('ai-thinking');
+                    }
+                });
+            } else {
+                pieceElements.forEach(pieceElement => {
+                    pieceElement.classList.remove('ai-thinking');
+                });
+            }
+        }
+        
+        function updateGameStatus() {
+            const statusElement = document.getElementById('gameStatus');
+            if (!gameOver) {
+                if (aiThinking) {
+                    statusElement.textContent = `${aiTeam === 'angels' ? 'Angels' : 'Demons'} are thinking...`;
+                    statusElement.style.color = aiTeam === 'angels' ? '#87CEEB' : '#FF6B6B';
+                } else if (currentPlayer === 'player') {
+                    statusElement.textContent = 'Your turn';
+                    statusElement.style.color = playerTeam === 'angels' ? '#87CEEB' : '#FF6B6B';
+                } else {
+                    statusElement.textContent = `${aiTeam === 'angels' ? 'Angels' : 'Demons'}'s turn`;
+                    statusElement.style.color = aiTeam === 'angels' ? '#87CEEB' : '#FF6B6B';
+                }
+            }
+        }
+        
+        function endGame(message) {
+            gameOver = true;
+            aiThinking = false;
+            animating = false;
+            document.getElementById('winner').textContent = message;
+            document.getElementById('gameStatus').textContent = 'Game Over';
+            updateBoard();
+        }
+        
+        function resetGame() {
+            initGame();
+        }
+        
+        function toggleAI() {
+            aiEnabled = !aiEnabled;
+            document.getElementById('aiBtn').textContent = aiEnabled ? 'AI: ON' : 'AI: OFF';
+            if (aiEnabled && currentPlayer === 'ai' && !gameOver && !aiThinking) {
+                setTimeout(makeAIMove, 500);
+            }
+        }
+        
+        function makeAIMove() {
+            if (gameOver || currentPlayer !== 'ai') return;
+            
+            aiThinking = true;
+            updateGameStatus();
+            updateBoard();
+            
+            const bestMove = findBestMove();
+            
+            setTimeout(() => {
+                if (bestMove) {
+                    if (board[bestMove.toRow][bestMove.toCol] !== null) {
+                        endGame(`${playerTeam === 'angels' ? 'Angels' : 'Demons'} win! ${aiTeam === 'angels' ? 'Angels' : 'Demons'} destroyed the balance of good and evil.`);
+                        return;
+                    }
+                    
+                    animateMove(bestMove.fromRow, bestMove.fromCol, bestMove.toRow, bestMove.toCol, () => {
+                        makeMove(bestMove.fromRow, bestMove.fromCol, bestMove.toRow, bestMove.toCol);
+                        
+                        if (checkVictory(bestMove.toRow, bestMove.toCol)) {
+                            aiThinking = false;
+                            updateBoard();
+                            return;
+                        }
+                        
+                        currentPlayer = 'player';
+                        aiThinking = false;
+                        updateGameStatus();
+                        updateBoard();
+                    });
+                } else {
+                    endGame(`${playerTeam === 'angels' ? 'Angels' : 'Demons'} win! ${aiTeam === 'angels' ? 'Angels' : 'Demons'} have no valid moves.`);
+                }
+            }, 1200);
+        }
+        
+        function findBestMove() {
+            const allMoves = getAllValidMoves(aiTeam);
+            if (allMoves.length === 0) return null;
+            
+            let bestMove = null;
+            let bestScore = -Infinity;
+            
+            for (const move of allMoves) {
+                let score = 0;
+                
+                const originalPiece = board[move.toRow][move.toCol];
+                makeMove(move.fromRow, move.fromCol, move.toRow, move.toCol);
+                
+                if (originalPiece !== null) {
+                    score = -10000;
+                } else {
+                    // Check for winning move
+                    const piece = board[move.toRow][move.toCol];
+                    if ((piece === 'A' && move.toRow === 0) || (piece === 'D' && move.toRow === 4)) {
+                        score += 10000;
+                    }
+                    
+                    // Prefer moves that advance toward the goal
+                    if (piece === 'A') {
+                        score += (move.fromRow - move.toRow) * 100; // Angels want to decrease row
+                    } else if (piece === 'D') {
+                        score += (move.toRow - move.fromRow) * 100; // Demons want to increase row
+                    }
+                    
+                    // Prefer center columns
+                    if (move.toCol >= 2 && move.toCol <= 5) {
+                        score += 20;
+                    }
+                    
+                    // Add randomness
+                    score += Math.random() * 10;
+                }
+                
+                // Undo the move
+                board[move.fromRow][move.fromCol] = board[move.toRow][move.toCol];
+                board[move.toRow][move.toCol] = originalPiece;
+                
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMove = move;
+                }
+            }
+            
+            return bestMove;
+        }
+        
+        function getAllValidMoves(team) {
+            const moves = [];
+            
+            for (let fromRow = 0; fromRow < 5; fromRow++) {
+                for (let fromCol = 0; fromCol < 8; fromCol++) {
+                    const piece = board[fromRow][fromCol];
+                    if (piece && isPlayerPiece(piece, team)) {
+                        for (let toRow = 0; toRow < 5; toRow++) {
+                            for (let toCol = 0; toCol < 8; toCol++) {
+                                if (isValidMove(fromRow, fromCol, toRow, toCol)) {
+                                    moves.push({ fromRow, fromCol, toRow, toCol });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return moves;
+        }
+        
+        document.getElementById('teamSelection').classList.remove('hidden');
+        document.getElementById('gameContent').classList.add('hidden');
+    </script>
+</body>
+</html>

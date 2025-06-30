@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini-Deprecate</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+            margin: 0;
+        }
+        
+        .game-container {
+            text-align: center;
+            position: relative;
+        }
+        
+        .game-info {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .stat {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .hp { color: #e74c3c; }
+        .mp { color: #3498db; }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(9, 50px);
+            grid-template-rows: repeat(9, 50px);
+            gap: 2px;
+            margin: 0 auto;
+            background-color: #34495e;
+            padding: 10px;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: black;
+            text-align: center;
+            border-radius: 8px;
+            z-index: 1000;
+        }
+        
+        .overlay.hidden {
+            display: none;
+        }
+        
+        .overlay-main {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        .overlay-sub {
+            font-size: 32px;
+        }
+        
+        .intro-overlay {
+            animation: intro-animation 2s ease-in-out forwards;
+        }
+        
+        @keyframes intro-animation {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 1;
+            }
+            70% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0;
+            }
+        }
+        
+        .cell {
+            width: 50px;
+            height: 50px;
+            background-color: #27ae60;
+            border: 1px solid #2c3e50;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+        
+        .cell.adjacent {
+            background-color: #52c78a;
+            border: 2px solid #00ff00;
+        }
+        
+        .cell.visited {
+            background-color: white;
+        }
+        
+        .cell.exit {
+            /* Exit is now invisible - no special styling */
+        }
+        
+        .cell.exit::after {
+            /* No visual indicator for exit */
+        }
+        
+        .player {
+            width: 50px;
+            height: 50px;
+            background-color: #00ff00;
+            border: 2px solid #00cc00;
+            box-sizing: border-box;
+            position: absolute;
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            z-index: 10;
+        }
+        
+        .bug {
+            width: 100%;
+            height: 100%;
+            background-color: #e74c3c;
+            border: 2px solid #c0392b;
+            box-sizing: border-box;
+        }
+        
+        .bug::after {
+            content: "🐛";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+        }
+        
+        .virus {
+            width: 100%;
+            height: 100%;
+            background-color: #9b59b6;
+            border: 2px solid #8e44ad;
+            box-sizing: border-box;
+        }
+        
+        .virus::after {
+            content: "🦠";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+        }
+        
+        .explosion::after {
+            animation: emoji-explode 0.8s ease-out forwards;
+        }
+        
+        .virus-explosion::after {
+            animation: emoji-explode 0.8s ease-out forwards;
+        }
+        
+        @keyframes emoji-explode {
+            0% {
+                transform: translate(-50%, -50%) scale(1);
+                text-shadow: 0 0 0 rgba(255, 0, 0, 0);
+                filter: brightness(1);
+            }
+            20% {
+                transform: translate(-50%, -50%) scale(1.3);
+                text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+                filter: brightness(2) saturate(2);
+            }
+            40% {
+                transform: translate(-50%, -50%) scale(1.5);
+                text-shadow: 0 0 20px rgba(255, 0, 0, 1);
+                filter: brightness(3) saturate(3);
+            }
+            60% {
+                transform: translate(-50%, -50%) scale(1.3);
+                text-shadow: 0 0 15px rgba(255, 0, 0, 0.9);
+                filter: brightness(2.5) saturate(2.5);
+            }
+            80% {
+                transform: translate(-50%, -50%) scale(1.1);
+                text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+                filter: brightness(1.5) saturate(1.5);
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1);
+                text-shadow: 0 0 0 rgba(255, 0, 0, 0);
+                filter: brightness(1) saturate(1);
+            }
+        }
+        
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #3498db;
+            color: white;
+        }
+        
+        button:hover {
+            background-color: #2980b9;
+        }
+        
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            min-height: 20px;
+        }
+        
+        .message.victory {
+            background-color: #d5f4e6;
+            color: #27ae60;
+        }
+        
+        .message.defeat {
+            background-color: #fadbd8;
+            color: #e74c3c;
+        }
+        
+        .message.damage {
+            background-color: #fdf2e9;
+            color: #e67e22;
+        }
+        
+        .instructions {
+            margin-top: 20px;
+            max-width: 600px;
+            text-align: left;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .instructions h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        
+        .instructions ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin: 5px 0;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(9, 40px);
+                grid-template-rows: repeat(9, 40px);
+                gap: 1px;
+                padding: 5px;
+            }
+            
+            .cell {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .player {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .game-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .overlay-main {
+                font-size: 32px;
+            }
+            
+            .overlay-sub {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>Mini-Deprecate</h1>
+        
+        <div class="game-info">
+            <div class="stat hp">HP: <span id="hp">81</span></div>
+            <div class="stat mp">MP: <span id="mp">81</span></div>
+        </div>
+        
+        <div class="grid" id="grid">
+            <div class="overlay hidden" id="overlay">
+                <div class="overlay-main" id="overlay-main"></div>
+                <div class="overlay-sub" id="overlay-sub"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="startGame()">New Game</button>
+            <button onclick="toggleSound()" id="soundToggle">🔊 Sound: ON</button>
+        </div>
+        
+        <div class="message" id="message"></div>
+        
+        <div class="instructions">
+            <h3>How to Play:</h3>
+            <ul>
+                <li>Tap adjacent squares (highlighted in lighter green) to move</li>
+                <li>Reach the EXIT in the corner to win</li>
+                <li>Each move costs 1 MP</li>
+                <li>Bugs (red) deal 1-9 HP damage when stepped on</li>
+                <li>Viruses (purple) deal 1-9 MP damage when stepped on</li>
+                <li>Bugs and viruses are invisible until you step on them</li>
+                <li>White squares show where you've been</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const GRID_WIDTH = 9;
+        const GRID_HEIGHT = 9;
+        const NUM_BUGS = 9;
+        const NUM_VIRUSES = 9;
+        
+        let gameState = {
+            hp: 81,
+            mp: 81,
+            maxHp: 81,
+            maxMp: 81,
+            playerX: 4, // center column
+            playerY: 4, // center row
+            exitX: 0,
+            exitY: 0,
+            bugs: [],
+            viruses: [],
+            visitedCells: new Set(),
+            gameOver: false,
+            won: false,
+            canMove: false, // Prevent movement during intro
+            isMoving: false // Prevent movement during animation
+        };
+        
+        let soundEnabled = true;
+        let audioContext;
+        let playerElement;
+        
+        // Initialize audio context
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        // Sound generation functions
+        function playSound(frequency, duration, type = 'sine', volume = 0.1) {
+            if (!soundEnabled) return;
+            
+            initAudio();
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+        
+        function playMoveSound() {
+            playSound(800, 0.1, 'square', 0.05);
+        }
+        
+        function playBugSound() {
+            // Buzzing sound for bug
+            playSound(200, 0.3, 'sawtooth', 0.1);
+            setTimeout(() => playSound(150, 0.2, 'sawtooth', 0.08), 100);
+        }
+        
+        function playVirusSound() {
+            // Digital corruption sound for virus
+            playSound(1000, 0.1, 'square', 0.08);
+            setTimeout(() => playSound(500, 0.15, 'square', 0.06), 50);
+            setTimeout(() => playSound(250, 0.1, 'square', 0.04), 150);
+        }
+        
+        function playWinSound() {
+            // Victory fanfare
+            const notes = [523, 659, 784, 1047]; // C, E, G, C
+            notes.forEach((note, i) => {
+                setTimeout(() => playSound(note, 0.3, 'sine', 0.1), i * 150);
+            });
+        }
+        
+        function playLoseSound() {
+            // Descending failure sound
+            playSound(400, 0.5, 'triangle', 0.1);
+            setTimeout(() => playSound(300, 0.5, 'triangle', 0.08), 200);
+            setTimeout(() => playSound(200, 0.8, 'triangle', 0.06), 400);
+        }
+        
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggle').textContent = soundEnabled ? '🔊 Sound: ON' : '🔇 Sound: OFF';
+        }
+        
+        function initGame() {
+            gameState = {
+                hp: 81,
+                mp: 81,
+                maxHp: 81,
+                maxMp: 81,
+                playerX: 4,
+                playerY: 4,
+                exitX: 0,
+                exitY: 0,
+                bugs: [],
+                viruses: [],
+                visitedCells: new Set(),
+                gameOver: false,
+                won: false,
+                canMove: false,
+                isMoving: false
+            };
+            
+            // Place exit randomly on any square except player starting position
+            let exitX, exitY;
+            do {
+                exitX = Math.floor(Math.random() * GRID_WIDTH);
+                exitY = Math.floor(Math.random() * GRID_HEIGHT);
+            } while (exitX === 4 && exitY === 4); // Not on player start position
+            
+            gameState.exitX = exitX;
+            gameState.exitY = exitY;
+            
+            // Place bugs and viruses
+            placeBugsAndViruses();
+            
+            // Mark starting position as visited
+            gameState.visitedCells.add(`${gameState.playerX},${gameState.playerY}`);
+            
+            // Hide overlay and show intro
+            hideOverlay();
+            showIntroOverlay();
+            
+            updateDisplay();
+            showMessage('', '');
+        }
+        
+        function placeBugsAndViruses() {
+            const occupiedPositions = new Set();
+            occupiedPositions.add(`${gameState.playerX},${gameState.playerY}`);
+            occupiedPositions.add(`${gameState.exitX},${gameState.exitY}`);
+            
+            // Place bugs
+            for (let i = 0; i < NUM_BUGS; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * GRID_WIDTH);
+                    y = Math.floor(Math.random() * GRID_HEIGHT);
+                } while (occupiedPositions.has(`${x},${y}`));
+                
+                gameState.bugs.push({x, y});
+                occupiedPositions.add(`${x},${y}`);
+            }
+            
+            // Place viruses
+            for (let i = 0; i < NUM_VIRUSES; i++) {
+                let x, y;
+                do {
+                    x = Math.floor(Math.random() * GRID_WIDTH);
+                    y = Math.floor(Math.random() * GRID_HEIGHT);
+                } while (occupiedPositions.has(`${x},${y}`));
+                
+                gameState.viruses.push({x, y});
+                occupiedPositions.add(`${x},${y}`);
+            }
+        }
+        
+        function createGrid() {
+            const grid = document.getElementById('grid');
+            // Clear only the cells, keep the overlay
+            const cells = grid.querySelectorAll('.cell');
+            cells.forEach(cell => cell.remove());
+            
+            // Remove existing player element
+            const existingPlayer = grid.querySelector('.player');
+            if (existingPlayer) {
+                existingPlayer.remove();
+            }
+            
+            for (let y = 0; y < GRID_HEIGHT; y++) {
+                for (let x = 0; x < GRID_WIDTH; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.id = `cell-${x}-${y}`;
+                    
+                    // Add click handler for mobile touch controls
+                    cell.addEventListener('click', () => handleCellClick(x, y));
+                    
+                    // Mark exit cell
+                    if (x === gameState.exitX && y === gameState.exitY) {
+                        cell.classList.add('exit');
+                    }
+                    
+                    // Mark visited cells
+                    if (gameState.visitedCells.has(`${x},${y}`)) {
+                        cell.classList.add('visited');
+                    }
+                    
+                    // Highlight adjacent cells for mobile
+                    if (isAdjacent(x, y, gameState.playerX, gameState.playerY)) {
+                        cell.classList.add('adjacent');
+                    }
+                    
+                    // Add visible bugs and viruses (only if stepped on)
+                    const bug = gameState.bugs.find(b => b.x === x && b.y === y && b.visible);
+                    const virus = gameState.viruses.find(v => v.x === x && v.y === y && v.visible);
+                    
+                    if (bug) {
+                        const bugElement = document.createElement('div');
+                        bugElement.className = 'bug';
+                        cell.appendChild(bugElement);
+                    }
+                    
+                    if (virus) {
+                        const virusElement = document.createElement('div');
+                        virusElement.className = 'virus';
+                        cell.appendChild(virusElement);
+                    }
+                    
+                    grid.appendChild(cell);
+                }
+            }
+            
+            // Create player element positioned absolutely
+            playerElement = document.createElement('div');
+            playerElement.className = 'player';
+            updatePlayerPosition();
+            grid.appendChild(playerElement);
+        }
+        
+        function updatePlayerPosition() {
+            if (!playerElement) return;
+            
+            // Get current cell size and gap from CSS
+            const isMobile = window.innerWidth <= 768;
+            const cellSize = isMobile ? 40 : 50;
+            const gap = isMobile ? 1 : 2;
+            const gridPadding = isMobile ? 5 : 10;
+            
+            // Calculate position based on grid layout (add 1px offset for perfect alignment)
+            const x = gridPadding + gameState.playerX * (cellSize + gap) + 1;
+            const y = gridPadding + gameState.playerY * (cellSize + gap) + 1;
+            
+            playerElement.style.transform = `translate(${x}px, ${y}px)`;
+        }
+        
+        function updateDisplay() {
+            document.getElementById('hp').textContent = gameState.hp;
+            document.getElementById('mp').textContent = gameState.mp;
+            createGrid();
+        }
+        
+        function showOverlay(mainText, subText) {
+            const overlay = document.getElementById('overlay');
+            const overlayMain = document.getElementById('overlay-main');
+            const overlaySub = document.getElementById('overlay-sub');
+            
+            overlayMain.textContent = mainText;
+            overlaySub.textContent = subText;
+            overlay.className = 'overlay'; // Remove hidden class and any animation classes
+        }
+        
+        function showIntroOverlay() {
+            const overlay = document.getElementById('overlay');
+            const overlayMain = document.getElementById('overlay-main');
+            const overlaySub = document.getElementById('overlay-sub');
+            
+            overlayMain.textContent = 'Find the Exit!';
+            overlaySub.textContent = '';
+            overlay.className = 'overlay intro-overlay';
+            
+            // Enable movement after animation completes
+            setTimeout(() => {
+                hideOverlay();
+                gameState.canMove = true;
+            }, 2000);
+        }
+        
+        function hideOverlay() {
+            const overlay = document.getElementById('overlay');
+            overlay.classList.add('hidden');
+        }
+        
+        function isAdjacent(x, y, playerX, playerY) {
+            const dx = Math.abs(x - playerX);
+            const dy = Math.abs(y - playerY);
+            return (dx === 1 && dy === 0) || (dx === 0 && dy === 1);
+        }
+        
+        function handleCellClick(x, y) {
+            if (gameState.gameOver || !gameState.canMove || gameState.isMoving) return;
+            
+            // Check if clicked cell is adjacent to player
+            if (isAdjacent(x, y, gameState.playerX, gameState.playerY)) {
+                const dx = x - gameState.playerX;
+                const dy = y - gameState.playerY;
+                movePlayer(dx, dy);
+            }
+        }
+        
+        function movePlayer(dx, dy) {
+            if (gameState.gameOver || !gameState.canMove || gameState.isMoving) return;
+            
+            const newX = gameState.playerX + dx;
+            const newY = gameState.playerY + dy;
+            
+            // Check bounds
+            if (newX < 0 || newX >= GRID_WIDTH || newY < 0 || newY >= GRID_HEIGHT) {
+                return;
+            }
+            
+            // Check if player has enough MP
+            if (gameState.mp <= 0) {
+                showMessage('No MP left! Game Over!', 'defeat');
+                showOverlay('Deprecated', 'MP Depleted');
+                gameState.gameOver = true;
+                playLoseSound();
+                return;
+            }
+            
+            // Start movement animation
+            gameState.isMoving = true;
+            gameState.playerX = newX;
+            gameState.playerY = newY;
+            gameState.mp--;
+            
+            // Play move sound
+            playMoveSound();
+            
+            // Update player position with animation
+            updatePlayerPosition();
+            
+            // Mark cell as visited
+            gameState.visitedCells.add(`${newX},${newY}`);
+            
+            // Wait for animation to complete before checking for collisions
+            setTimeout(() => {
+                // Check for bugs
+                const bug = gameState.bugs.find(b => b.x === newX && b.y === newY && !b.visible);
+                if (bug) {
+                    bug.visible = true;
+                    const damage = Math.floor(Math.random() * 9) + 1;
+                    gameState.hp -= damage;
+                    
+                    playBugSound();
+                    
+                    // Add explosion animation
+                    setTimeout(() => {
+                        const cell = document.getElementById(`cell-${newX}-${newY}`);
+                        const bugElement = cell.querySelector('.bug');
+                        if (bugElement) {
+                            bugElement.classList.add('explosion');
+                        }
+                    }, 100);
+                    
+                    showMessage(`Hit a bug! Lost ${damage} HP!`, 'damage');
+                    
+                    if (gameState.hp <= 0) {
+                        showMessage('HP depleted! Game Over!', 'defeat');
+                        gameState.gameOver = true;
+                        playLoseSound();
+                        // Wait for animation to complete before showing overlay
+                        setTimeout(() => {
+                            showOverlay('Deprecated', 'HP Depleted');
+                        }, 900);
+                        updateDisplay();
+                        gameState.isMoving = false;
+                        return;
+                    }
+                }
+                
+                // Check for viruses
+                const virus = gameState.viruses.find(v => v.x === newX && v.y === newY && !v.visible);
+                if (virus) {
+                    virus.visible = true;
+                    const damage = Math.floor(Math.random() * 9) + 1;
+                    gameState.mp -= damage;
+                    
+                    playVirusSound();
+                    
+                    // Add explosion animation
+                    setTimeout(() => {
+                        const cell = document.getElementById(`cell-${newX}-${newY}`);
+                        const virusElement = cell.querySelector('.virus');
+                        if (virusElement) {
+                            virusElement.classList.add('virus-explosion');
+                        }
+                    }, 100);
+                    
+                    showMessage(`Hit a virus! Lost ${damage} MP!`, 'damage');
+                    
+                    if (gameState.mp <= 0) {
+                        showMessage('MP depleted! Game Over!', 'defeat');
+                        gameState.gameOver = true;
+                        playLoseSound();
+                        // Wait for animation to complete before showing overlay
+                        setTimeout(() => {
+                            showOverlay('Deprecated', 'MP Depleted');
+                        }, 900);
+                        updateDisplay();
+                        gameState.isMoving = false;
+                        return;
+                    }
+                }
+                
+                // Check for exit
+                if (newX === gameState.exitX && newY === gameState.exitY) {
+                    gameState.won = true;
+                    gameState.gameOver = true;
+                    showMessage('Congratulations! You reached the exit!', 'victory');
+                    showOverlay('Success', '');
+                    playWinSound();
+                }
+                
+                updateDisplay();
+                gameState.isMoving = false;
+            }, 300); // Wait for slide animation to complete
+        }
+        
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = `message ${type}`;
+        }
+        
+        function startGame() {
+            initGame();
+        }
+        
+        // Keyboard controls
+        document.addEventListener('keydown', function(e) {
+            if (!gameState.canMove || gameState.isMoving) return;
+            
+            switch(e.key.toLowerCase()) {
+                case 'w':
+                case 'arrowup':
+                    e.preventDefault();
+                    movePlayer(0, -1);
+                    break;
+                case 's':
+                case 'arrowdown':
+                    e.preventDefault();
+                    movePlayer(0, 1);
+                    break;
+                case 'a':
+                case 'arrowleft':
+                    e.preventDefault();
+                    movePlayer(-1, 0);
+                    break;
+                case 'd':
+                case 'arrowright':
+                    e.preventDefault();
+                    movePlayer(1, 0);
+                    break;
+            }
+        });
+        
+        // Handle window resize for player positioning
+        window.addEventListener('resize', () => {
+            if (playerElement) {
+                updatePlayerPosition();
+            }
+        });
+        
+        // Initialize game on load
+        window.addEventListener('load', function() {
+            initGame();
+        });
+    </script>
+</body>
+</html>
